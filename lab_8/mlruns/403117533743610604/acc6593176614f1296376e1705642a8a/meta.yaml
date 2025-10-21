@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/acc6593176614f1296376e1705642a8a/artifacts
+end_time: 1761005178640
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: acc6593176614f1296376e1705642a8a
+run_name: unruly-penguin-355
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761005140791
+status: 3
+tags: []
+user_id: elisa

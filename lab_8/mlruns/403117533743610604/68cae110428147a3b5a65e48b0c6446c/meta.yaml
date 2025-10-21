@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/68cae110428147a3b5a65e48b0c6446c/artifacts
+end_time: 1761004738135
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 68cae110428147a3b5a65e48b0c6446c
+run_name: charming-flea-714
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004727409
+status: 3
+tags: []
+user_id: elisa

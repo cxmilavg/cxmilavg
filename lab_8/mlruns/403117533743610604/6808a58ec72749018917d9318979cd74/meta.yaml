@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/6808a58ec72749018917d9318979cd74/artifacts
+end_time: 1761004052323
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 6808a58ec72749018917d9318979cd74
+run_name: enthused-mouse-753
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004044638
+status: 3
+tags: []
+user_id: elisa

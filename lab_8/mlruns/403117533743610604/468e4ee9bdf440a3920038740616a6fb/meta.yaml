@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/468e4ee9bdf440a3920038740616a6fb/artifacts
+end_time: 1761005187313
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 468e4ee9bdf440a3920038740616a6fb
+run_name: nebulous-moose-744
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761005178657
+status: 3
+tags: []
+user_id: elisa

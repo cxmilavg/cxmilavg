@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/fe9d979dc37c41aa86b7e95476cf679b/artifacts
+end_time: 1761004749286
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: fe9d979dc37c41aa86b7e95476cf679b
+run_name: dazzling-swan-381
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004738156
+status: 3
+tags: []
+user_id: elisa

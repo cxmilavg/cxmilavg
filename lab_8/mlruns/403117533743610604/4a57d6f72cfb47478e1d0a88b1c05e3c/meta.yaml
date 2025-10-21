@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/4a57d6f72cfb47478e1d0a88b1c05e3c/artifacts
+end_time: 1761004820825
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 4a57d6f72cfb47478e1d0a88b1c05e3c
+run_name: resilient-koi-427
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004813257
+status: 3
+tags: []
+user_id: elisa

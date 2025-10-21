@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/2fc1ce6ddb544ff090730fd864caff9d/artifacts
+end_time: 1761004837821
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 2fc1ce6ddb544ff090730fd864caff9d
+run_name: capable-snipe-84
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004829754
+status: 3
+tags: []
+user_id: elisa

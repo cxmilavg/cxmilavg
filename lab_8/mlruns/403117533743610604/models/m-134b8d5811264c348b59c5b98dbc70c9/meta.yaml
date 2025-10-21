@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/models/m-134b8d5811264c348b59c5b98dbc70c9/artifacts
+creation_timestamp: 1761004497777
+experiment_id: '403117533743610604'
+last_updated_timestamp: 1761004503857
+model_id: m-134b8d5811264c348b59c5b98dbc70c9
+model_type: null
+name: model
+source_run_id: bd136ea573ca4b5b993eab5daeca772e
+status: 2
+status_message: null

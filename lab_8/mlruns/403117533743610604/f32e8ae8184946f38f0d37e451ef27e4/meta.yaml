@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/f32e8ae8184946f38f0d37e451ef27e4/artifacts
+end_time: 1761004672617
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: f32e8ae8184946f38f0d37e451ef27e4
+run_name: spiffy-ant-946
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004592613
+status: 3
+tags: []
+user_id: elisa

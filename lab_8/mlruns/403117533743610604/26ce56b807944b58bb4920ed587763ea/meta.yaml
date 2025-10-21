@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/26ce56b807944b58bb4920ed587763ea/artifacts
+end_time: 1761004532234
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 26ce56b807944b58bb4920ed587763ea
+run_name: resilient-croc-658
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004510549
+status: 3
+tags: []
+user_id: elisa

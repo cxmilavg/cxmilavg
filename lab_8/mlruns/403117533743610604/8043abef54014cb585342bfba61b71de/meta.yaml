@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/8043abef54014cb585342bfba61b71de/artifacts
+end_time: 1761004718020
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 8043abef54014cb585342bfba61b71de
+run_name: entertaining-pig-43
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004710651
+status: 3
+tags: []
+user_id: elisa

@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/11d89fcbfc084a499db2a82069bd41ba/artifacts
+end_time: 1761003770350
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 11d89fcbfc084a499db2a82069bd41ba
+run_name: inquisitive-moth-281
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761003742690
+status: 3
+tags: []
+user_id: elisa

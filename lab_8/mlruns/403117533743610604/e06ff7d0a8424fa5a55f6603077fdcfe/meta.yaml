@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/e06ff7d0a8424fa5a55f6603077fdcfe/artifacts
+end_time: 1761004882220
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: e06ff7d0a8424fa5a55f6603077fdcfe
+run_name: adorable-hen-305
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004846558
+status: 3
+tags: []
+user_id: elisa

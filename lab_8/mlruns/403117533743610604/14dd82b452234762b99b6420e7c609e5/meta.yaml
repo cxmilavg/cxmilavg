@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/14dd82b452234762b99b6420e7c609e5/artifacts
+end_time: 1761005250371
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 14dd82b452234762b99b6420e7c609e5
+run_name: colorful-robin-407
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761005239498
+status: 3
+tags: []
+user_id: elisa

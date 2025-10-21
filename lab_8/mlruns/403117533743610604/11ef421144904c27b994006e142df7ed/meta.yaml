@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/11ef421144904c27b994006e142df7ed/artifacts
+end_time: 1761004829736
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 11ef421144904c27b994006e142df7ed
+run_name: traveling-auk-993
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004820839
+status: 3
+tags: []
+user_id: elisa

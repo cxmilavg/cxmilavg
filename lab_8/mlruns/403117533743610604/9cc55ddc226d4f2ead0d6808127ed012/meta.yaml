@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/9cc55ddc226d4f2ead0d6808127ed012/artifacts
+end_time: 1761005239475
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 9cc55ddc226d4f2ead0d6808127ed012
+run_name: colorful-fly-336
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761005229494
+status: 3
+tags: []
+user_id: elisa

@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/a5e5f11f2d404dbd9a01a144a9d0688e/artifacts
+end_time: 1761004689305
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: a5e5f11f2d404dbd9a01a144a9d0688e
+run_name: melodic-ox-111
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004682540
+status: 3
+tags: []
+user_id: elisa

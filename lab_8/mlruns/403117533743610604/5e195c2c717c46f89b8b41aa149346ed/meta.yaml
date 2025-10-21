@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/5e195c2c717c46f89b8b41aa149346ed/artifacts
+end_time: 1761005045779
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 5e195c2c717c46f89b8b41aa149346ed
+run_name: grandiose-hound-683
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761005026092
+status: 3
+tags: []
+user_id: elisa

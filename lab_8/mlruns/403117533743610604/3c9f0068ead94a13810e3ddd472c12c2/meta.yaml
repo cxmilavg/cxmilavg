@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/3c9f0068ead94a13810e3ddd472c12c2/artifacts
+end_time: 1761004085053
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 3c9f0068ead94a13810e3ddd472c12c2
+run_name: gregarious-calf-692
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004084928
+status: 4
+tags: []
+user_id: elisa

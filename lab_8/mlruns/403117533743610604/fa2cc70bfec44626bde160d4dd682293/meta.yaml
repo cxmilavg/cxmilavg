@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/fa2cc70bfec44626bde160d4dd682293/artifacts
+end_time: 1761005080023
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: fa2cc70bfec44626bde160d4dd682293
+run_name: likeable-chimp-133
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761005071856
+status: 3
+tags: []
+user_id: elisa

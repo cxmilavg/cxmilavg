@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/24d23bc60fa34558962c7fa3f9e064e1/artifacts
+end_time: 1761004084915
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 24d23bc60fa34558962c7fa3f9e064e1
+run_name: vaunted-conch-537
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004079113
+status: 3
+tags: []
+user_id: elisa

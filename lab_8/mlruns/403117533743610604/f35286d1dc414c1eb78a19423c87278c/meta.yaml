@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/f35286d1dc414c1eb78a19423c87278c/artifacts
+end_time: 1761004805115
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: f35286d1dc414c1eb78a19423c87278c
+run_name: shivering-bat-792
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004794264
+status: 3
+tags: []
+user_id: elisa

@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/37274f89d2dd47838199b23189e81314/artifacts
+end_time: 1761005210739
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 37274f89d2dd47838199b23189e81314
+run_name: masked-roo-902
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761005202852
+status: 3
+tags: []
+user_id: elisa

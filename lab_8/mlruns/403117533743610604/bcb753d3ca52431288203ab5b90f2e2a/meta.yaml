@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/bcb753d3ca52431288203ab5b90f2e2a/artifacts
+end_time: 1761005110273
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: bcb753d3ca52431288203ab5b90f2e2a
+run_name: adorable-penguin-599
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761005087555
+status: 3
+tags: []
+user_id: elisa

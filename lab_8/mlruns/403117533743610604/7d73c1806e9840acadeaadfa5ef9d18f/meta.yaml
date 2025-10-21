@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/7d73c1806e9840acadeaadfa5ef9d18f/artifacts
+end_time: 1761004079100
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 7d73c1806e9840acadeaadfa5ef9d18f
+run_name: skittish-whale-797
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004052333
+status: 3
+tags: []
+user_id: elisa

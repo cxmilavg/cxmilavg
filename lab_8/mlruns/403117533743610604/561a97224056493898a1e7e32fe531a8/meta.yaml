@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/561a97224056493898a1e7e32fe531a8/artifacts
+end_time: 1761004794245
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: 561a97224056493898a1e7e32fe531a8
+run_name: abundant-swan-28
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004784217
+status: 3
+tags: []
+user_id: elisa

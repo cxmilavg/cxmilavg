@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/ecc91e2959144acc81505a59d7ae8b21/artifacts
+end_time: 1761004592601
+entry_point_name: ''
+experiment_id: '403117533743610604'
+lifecycle_stage: active
+run_id: ecc91e2959144acc81505a59d7ae8b21
+run_name: resilient-whale-454
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1761004582297
+status: 3
+tags: []
+user_id: elisa

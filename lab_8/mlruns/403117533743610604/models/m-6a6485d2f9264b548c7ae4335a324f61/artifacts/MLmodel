@@ -1,0 +1,32 @@
+artifact_path: file:///C:/Users/elisa/Documents/GitHub/cxmilavg/lab_8/mlruns/403117533743610604/models/m-6a6485d2f9264b548c7ae4335a324f61/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.7
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.2
+is_signature_from_type_hint: false
+mlflow_version: 3.5.0
+model_id: m-6a6485d2f9264b548c7ae4335a324f61
+model_size_bytes: 790605
+model_uuid: m-6a6485d2f9264b548c7ae4335a324f61
+prompts: null
+run_id: d13aa50d275145e7a2beb6f7fae1e680
+saved_input_example_info:
+  artifact_path: input_example.json
+  serving_input_path: serving_input_example.json
+  type: ndarray
+signature:
+  inputs: '[{"type": "tensor", "tensor-spec": {"dtype": "float64", "shape": [-1, 13]}}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2025-10-20 23:55:06.810036'
