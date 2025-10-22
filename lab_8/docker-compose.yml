@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  fastapi-app:
+    build: .
+    container_name: fastapi-container
+    ports:
+      - "8000:8000"  # Exponemos el puerto 8000
+    volumes:
+      - ./models:/app/models  # Persistir los modelos en el directorio local
+    environment:
+      - ENV=production  # Configuración opcional del entorno
+    restart: always  # Reintentar automáticamente el contenedor si se detiene
