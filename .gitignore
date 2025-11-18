@@ -6,3 +6,5 @@ videos/
 
 # excepto este archivo
 !texts/171.txt
+
+venv/
