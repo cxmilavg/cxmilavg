@@ -1,0 +1,15 @@
+artifact_uri: /Users/cxmilavg/Documents/GitHub/cxmilavg/entrega2/mlruns/0/ab59a2ff9c5f4cd3a66dc28fe94f8ce7/artifacts
+end_time: 1763600434264
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: ab59a2ff9c5f4cd3a66dc28fe94f8ce7
+run_name: hyperparameter_tuning
+run_uuid: ab59a2ff9c5f4cd3a66dc28fe94f8ce7
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1763600434256
+status: 3
+tags: []
+user_id: cxmilavg

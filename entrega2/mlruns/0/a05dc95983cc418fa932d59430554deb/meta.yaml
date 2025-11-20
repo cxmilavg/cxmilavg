@@ -1,0 +1,15 @@
+artifact_uri: /Users/cxmilavg/Documents/GitHub/cxmilavg/entrega2/mlruns/0/a05dc95983cc418fa932d59430554deb/artifacts
+end_time: 1763600439014
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: a05dc95983cc418fa932d59430554deb
+run_name: model_training
+run_uuid: a05dc95983cc418fa932d59430554deb
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1763600437650
+status: 4
+tags: []
+user_id: cxmilavg
