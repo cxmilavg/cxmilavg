@@ -5,7 +5,7 @@ import mlflow
 from pathlib import Path
 
 # Cargar el modelo entrenado (desde el directorio donde se guarda el modelo)
-MODEL_PATH = Path("/path/to/your/model") / "latest_model.pkl"  # Actualiza con la ruta exacta
+MODEL_PATH = Path("models") / "latest_model.pkl"  # Actualiza con la ruta exacta
 model = joblib.load(MODEL_PATH)
 
 app = FastAPI()

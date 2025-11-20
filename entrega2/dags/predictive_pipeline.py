@@ -671,8 +671,7 @@ with DAG(
         python_callable=skip_retrain,
     )
 
-    # Esto debe estar al final del archivo:
     wait_for_data >> ingest_task >> transform_task >> enrich_task >> drift_task >> branch_retrain
     branch_retrain >> [tune_task, no_retrain]
     tune_task >> train_task >> interpret_task >> predict_task
-    no_retrain >> predict_task  # ← ¡IMPORTANTE! Esta conexión debe existir
+    no_retrain >> predict_task
