@@ -5,7 +5,7 @@ services:
     build:
       context: ./backend
     volumes:
-      - ./models:/app/models
+      - ../airflow/models:/app/models
     ports:
       - "8000:8000"
     networks:

@@ -1,8 +1,10 @@
+import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 import joblib
 import pandas as pd
-from pathlib import Path
 
 # Columnas utilizadas durante el entrenamiento
 SAFE_FEATURES = [
@@ -18,8 +20,13 @@ SAFE_FEATURES = [
     "package",
 ]
 
-# Cargar el modelo entrenado
-MODEL_PATH = Path("models") / "latest_model.pkl"
+# Permitir configurar la ubicación del modelo (útil tras mover carpetas)
+DEFAULT_MODEL_PATH = Path(__file__).resolve().parent / "models" / "latest_model.pkl"
+MODEL_PATH = Path(os.environ.get("MODEL_PATH", DEFAULT_MODEL_PATH))
+
+if not MODEL_PATH.exists():
+    raise FileNotFoundError(f"No se encontró el modelo en {MODEL_PATH}")
+
 model = joblib.load(MODEL_PATH)
 
 app = FastAPI()
