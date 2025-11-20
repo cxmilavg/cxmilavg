@@ -4,6 +4,8 @@ services:
   backend:
     build:
       context: ./backend
+    volumes:
+      - ./models:/app/models
     ports:
       - "8000:8000"
     networks:
