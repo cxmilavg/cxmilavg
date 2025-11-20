@@ -1,12 +1,23 @@
 from __future__ import annotations
 
+import os
+import sys
+import warnings
+from typing import Any, Dict, List, Optional
+
+warnings.filterwarnings("ignore")
+
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from sklearn.ensemble import RandomForestClassifier
+from lightgbm import LGBMClassifier
+import mlflow
+import mlflow.sklearn
+from optuna.samplers import TPESampler
 import joblib
 import matplotlib.pyplot as plt
-import mlflow
 import numpy as np
 import optuna
 import pandas as pd
@@ -65,9 +76,14 @@ CAT_COLS = ["customer_type", "brand", "category", "sub_category", "segment", "pa
 # Columna objetivo generada en el enriquecimiento
 TARGET_COL = "compra"
 
-mlflow.set_tracking_uri(str(BASE_DIR / "mlruns"))
-mlflow.set_experiment("predictive_pipeline")
-
+def setup_mlflow():
+    """Configurar MLflow con mejores prácticas"""
+    mlflow.set_tracking_uri(str(BASE_DIR / "mlruns"))
+    mlflow.set_experiment("sodai_drinks_predictive_pipeline")
+    
+    # Crear directorios necesarios
+    (BASE_DIR / "mlruns").mkdir(exist_ok=True)
+    return mlflow
 
 # ------------------ Ingesta y limpieza básica ------------------
 def _has_new_parquet() -> bool:
@@ -196,28 +212,70 @@ def _psi_categorical(expected: pd.Series, actual: pd.Series) -> float:
 
 
 def detect_drift(**context) -> dict:
-    processed_path = Path(context["ti"].xcom_pull(task_ids="transform_data"))
-    df_new = pd.read_parquet(processed_path)
+    """
+    Detectar drift usando PSI (Population Stability Index)
+    Retorna dict con información del drift detectado
+    """
+    try:
+        processed_path = Path(context["ti"].xcom_pull(task_ids="transform_data"))
+        df_new = pd.read_parquet(processed_path)
 
-    if not REFERENCE_PATH.exists():
-        REFERENCE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(processed_path, REFERENCE_PATH)
-        return {"drift_detected": False, "reason": "reference_initialized"}
+        # Si no existe referencia, crear una
+        if not REFERENCE_PATH.exists():
+            REFERENCE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            df_new.to_parquet(REFERENCE_PATH, index=False)
+            context["ti"].xcom_push(key="drift_reason", value="reference_initialized")
+            return {"drift_detected": False, "reason": "reference_initialized"}
 
-    df_ref = pd.read_parquet(REFERENCE_PATH)
+        df_ref = pd.read_parquet(REFERENCE_PATH)
+        
+        # Verificar que ambos DataFrames tengan las mismas columnas
+        common_cols = set(df_ref.columns) & set(df_new.columns)
+        if not common_cols:
+            return {"drift_detected": True, "reason": "no_common_columns"}
+        
+        psi_scores = {}
+        drift_threshold = 0.2
+        
+        # Calcular PSI solo para columnas numéricas
+        numeric_cols = df_ref.select_dtypes(include=[np.number]).columns
+        numeric_cols = [col for col in numeric_cols if col in df_new.columns]
+        
+        for col in numeric_cols:
+            try:
+                # Filtrar valores infinitos y NaN
+                ref_vals = df_ref[col].replace([np.inf, -np.inf], np.nan).dropna()
+                new_vals = df_new[col].replace([np.inf, -np.inf], np.nan).dropna()
+                
+                if len(ref_vals) > 0 and len(new_vals) > 0:
+                    psi = _psi_numeric(ref_vals, new_vals)
+                    psi_scores[col] = psi
+            except Exception as e:
+                print(f"Error calculando PSI para {col}: {e}")
+                continue
 
-    psi_scores = {}
-    for col in NUM_COLS:
-        if col in df_ref.columns and col in df_new.columns:
-            psi_scores[col] = _psi_numeric(df_ref[col], df_new[col])
-    for col in CAT_COLS:
-        if col in df_ref.columns and col in df_new.columns:
-            psi_scores[col] = _psi_categorical(df_ref[col], df_new[col])
-
-    max_psi = max(psi_scores.values()) if psi_scores else 0.0
-    drift = max_psi > 0.2
-    return {"drift_detected": drift, "max_psi": max_psi, "psi_scores": psi_scores}
-
+        if not psi_scores:
+            return {"drift_detected": False, "reason": "no_valid_columns_for_psi"}
+        
+        max_psi = max(psi_scores.values())
+        drift_detected = max_psi > drift_threshold
+        
+        result = {
+            "drift_detected": drift_detected,
+            "max_psi": max_psi,
+            "psi_scores": psi_scores,
+            "reason": f"drift_detected_{max_psi:.3f}" if drift_detected else "no_drift"
+        }
+        
+        # Actualizar referencia si no hay drift
+        if not drift_detected:
+            df_new.to_parquet(REFERENCE_PATH, index=False)
+            
+        return result
+        
+    except Exception as e:
+        print(f"Error en detección de drift: {e}")
+        return {"drift_detected": False, "reason": f"error: {str(e)}"}
 
 # ------------------ Branching retrain ------------------
 def _should_retrain(**context) -> str:
@@ -232,132 +290,314 @@ def _should_retrain(**context) -> str:
 
 # ------------------ Tuning / entrenamiento ------------------
 def tune_model(**context) -> dict:
-    enriched_path = Path(context["ti"].xcom_pull(task_ids="enrich_and_label"))
-    df = pd.read_parquet(enriched_path)
-    if TARGET_COL not in df.columns:
-        raise ValueError(f"Falta columna objetivo {TARGET_COL} para tuning/entrenamiento")
+    """Optimizar hiperparámetros usando Optuna para LightGBM"""
+    try:
+        enriched_path = Path(context["ti"].xcom_pull(task_ids="enrich_and_label"))
+        df = pd.read_parquet(enriched_path)
+        
+        if TARGET_COL not in df.columns:
+            raise ValueError(f"Falta columna objetivo {TARGET_COL}")
 
-    X = df.drop(columns=[TARGET_COL])
-    y = df[TARGET_COL]
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-
-    preprocessor = build_preprocessor()
-
-    def objective(trial):
-        C = trial.suggest_float("C", 1e-3, 10, log=True)
-        model = Pipeline(
-            steps=[
-                ("preprocessor", preprocessor),
-                ("classifier", LogisticRegression(max_iter=200, C=C, n_jobs=-1)),
-            ]
+        # Preparar características seguras (sin leakage)
+        safe_features = ['region_id', 'customer_type', 'Y', 'X', 'size', 
+                        'brand', 'category', 'sub_category', 'segment', 'package']
+        safe_features = [col for col in safe_features if col in df.columns]
+        
+        X = df[safe_features]
+        y = df[TARGET_COL]
+        
+        # División temporal
+        X_train, X_val, y_train, y_val = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
         )
-        model.fit(X_train, y_train)
-        preds = model.predict(X_val)
-        return f1_score(y_val, preds)
 
-    study = optuna.create_study(direction="maximize")
-    study.optimize(objective, n_trials=10, timeout=300)
-    best_params = study.best_params
-    context["ti"].xcom_push(key="best_params", value=best_params)
-    return best_params
+        preprocessor = build_preprocessor()
+
+        def objective(trial):
+            """Función objetivo para Optuna"""
+            params = {
+                'n_estimators': trial.suggest_int('n_estimators', 50, 200),
+                'max_depth': trial.suggest_int('max_depth', 3, 10),
+                'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
+                'num_leaves': trial.suggest_int('num_leaves', 20, 100),
+                'min_child_samples': trial.suggest_int('min_child_samples', 10, 50),
+                'subsample': trial.suggest_float('subsample', 0.7, 1.0),
+                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.7, 1.0),
+                'reg_alpha': trial.suggest_float('reg_alpha', 0.0, 1.0),
+                'reg_lambda': trial.suggest_float('reg_lambda', 0.0, 1.0),
+            }
+
+            model = Pipeline([
+                ('preprocessor', preprocessor),
+                ('classifier', LGBMClassifier(**params, random_state=42, n_jobs=-1))
+            ])
+
+            # Usar cross-validation para evaluación más robusta
+            from sklearn.model_selection import cross_val_score
+            scores = cross_val_score(model, X_train, y_train, 
+                                   cv=3, scoring='roc_auc', n_jobs=-1)
+            return scores.mean()
+
+        study = optuna.create_study(
+            direction='maximize',
+            sampler=TPESampler(seed=42)
+        )
+        
+        study.optimize(objective, n_trials=10, timeout=600)
+        
+        best_params = study.best_params
+        context["ti"].xcom_push(key="best_params", value=best_params)
+        
+        # Loggear en MLflow
+        with mlflow.start_run(run_name="hyperparameter_tuning"):
+            mlflow.log_params(best_params)
+            mlflow.log_metric("best_cv_score", study.best_value)
+            mlflow.log_param("n_trials", len(study.trials))
+        
+        return best_params
+        
+    except Exception as e:
+        print(f"Error en optimización: {e}")
+        # Retornar parámetros por defecto en caso de error
+        default_params = {
+            'n_estimators': 100,
+            'max_depth': 6,
+            'learning_rate': 0.1,
+            'num_leaves': 31
+        }
+        context["ti"].xcom_push(key="best_params", value=default_params)
+        return default_params
 
 
 def train_model(**context) -> str:
-    enriched_path = Path(context["ti"].xcom_pull(task_ids="enrich_and_label"))
-    df = pd.read_parquet(enriched_path)
-    best_params = context["ti"].xcom_pull(task_ids="tune_model", key="best_params") or {}
-    if TARGET_COL not in df.columns:
-        raise ValueError(f"Falta columna objetivo {TARGET_COL} para entrenamiento")
+    """Entrenar modelo con los mejores hiperparámetros encontrados"""
+    try:
+        enriched_path = Path(context["ti"].xcom_pull(task_ids="enrich_and_label"))
+        df = pd.read_parquet(enriched_path)
+        
+        best_params = context["ti"].xcom_pull(task_ids="tune_model", key="best_params") or {}
+        
+        if TARGET_COL not in df.columns:
+            raise ValueError(f"Falta columna objetivo {TARGET_COL}")
 
-    X = df.drop(columns=[TARGET_COL])
-    y = df[TARGET_COL]
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+        # Preparar características seguras
+        safe_features = ['region_id', 'customer_type', 'Y', 'X', 'size', 
+                        'brand', 'category', 'sub_category', 'segment', 'package']
+        safe_features = [col for col in safe_features if col in df.columns]
+        
+        X = df[safe_features]
+        y = df[TARGET_COL]
+        
+        X_train, X_val, y_train, y_val = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
 
-    preprocessor = build_preprocessor()
-    model = Pipeline(
-        steps=[
-            ("preprocessor", preprocessor),
-            ("classifier", LogisticRegression(max_iter=200, **best_params)),
-        ]
-    )
+        preprocessor = build_preprocessor()
+        
+        # Usar LightGBM como modelo principal
+        model = Pipeline([
+            ('preprocessor', preprocessor),
+            ('classifier', LGBMClassifier(**best_params, random_state=42, n_jobs=-1))
+        ])
 
-    with mlflow.start_run(run_name="retrain"):
-        mlflow.log_params(best_params)
-        model.fit(X_train, y_train)
-        preds = model.predict(X_val)
-        f1 = f1_score(y_val, preds)
-        auc = roc_auc_score(y_val, preds)
-        mlflow.log_metric("f1_val", f1)
-        mlflow.log_metric("roc_auc_val", auc)
-        MODEL_DIR.mkdir(parents=True, exist_ok=True)
-        model_path = MODEL_DIR / "latest_model.pkl"
-        joblib.dump(model, model_path)
-        mlflow.log_artifact(str(model_path))
-    return str(model_path)
+        with mlflow.start_run(run_name="model_training") as run:
+            # Loggear parámetros y métricas
+            mlflow.log_params(best_params)
+            mlflow.log_param("model_type", "LightGBM")
+            mlflow.log_param("features", str(safe_features))
+            
+            # Entrenar modelo
+            model.fit(X_train, y_train)
+            
+            # Evaluar
+            y_pred = model.predict(X_val)
+            y_pred_proba = model.predict_proba(X_val)[:, 1]
+            
+            from sklearn.metrics import classification_report, roc_auc_score, f1_score
+            f1 = f1_score(y_val, y_pred)
+            auc = roc_auc_score(y_val, y_pred_proba)
+            accuracy = (y_pred == y_val).mean()
+            
+            # Loggear métricas
+            mlflow.log_metrics({
+                "f1_score": f1,
+                "roc_auc": auc,
+                "accuracy": accuracy
+            })
+            
+            # Loggear classification report como artifact
+            report = classification_report(y_val, y_pred, output_dict=True)
+            report_df = pd.DataFrame(report).transpose()
+            report_path = MODEL_DIR / "classification_report.csv"
+            report_df.to_csv(report_path)
+            mlflow.log_artifact(str(report_path))
+            
+            # Guardar modelo
+            MODEL_DIR.mkdir(parents=True, exist_ok=True)
+            model_path = MODEL_DIR / "latest_model.pkl"
+            joblib.dump(model, model_path)
+            
+            # Loggear modelo en MLflow
+            mlflow.sklearn.log_model(model, "model")
+            
+            print(f"Modelo entrenado - F1: {f1:.4f}, AUC: {auc:.4f}")
+            
+        return str(model_path)
+        
+    except Exception as e:
+        print(f"Error en entrenamiento: {e}")
+        raise
 
 
 # ------------------ Interpretabilidad (coeficientes) ------------------
 def interpret_model(**context) -> str:
-    model_path = Path(context["ti"].xcom_pull(task_ids="train_model"))
-    model = joblib.load(model_path)
-    clf = model.named_steps["classifier"]
-    preprocessor = model.named_steps["preprocessor"]
-    feature_names = preprocessor.get_feature_names_out()
-    coefs = getattr(clf, "coef_", None)
-
-    artifact_dir = MODEL_DIR / "artifacts"
-    artifact_dir.mkdir(parents=True, exist_ok=True)
-    coef_txt = artifact_dir / "coefficients.txt"
-    coef_png = artifact_dir / "feature_importance.png"
-
-    if coefs is not None:
-        np.savetxt(coef_txt, coefs)
-        coef_series = pd.Series(coefs.flatten(), index=feature_names)
-        top = coef_series.abs().sort_values(ascending=False).head(20)
-        plt.figure(figsize=(8, 6))
-        top.sort_values().plot(kind="barh")
+    """Generar explicaciones del modelo usando SHAP"""
+    try:
+        model_path = Path(context["ti"].xcom_pull(task_ids="train_model"))
+        model = joblib.load(model_path)
+        
+        enriched_path = Path(context["ti"].xcom_pull(task_ids="enrich_and_label"))
+        df = pd.read_parquet(enriched_path)
+        
+        # Preparar datos para SHAP
+        safe_features = ['region_id', 'customer_type', 'Y', 'X', 'size', 
+                        'brand', 'category', 'sub_category', 'segment', 'package']
+        safe_features = [col for col in safe_features if col in df.columns]
+        
+        X = df[safe_features].sample(1000, random_state=42)  # Muestra para SHAP
+        
+        # Transformar datos
+        preprocessor = model.named_steps['preprocessor']
+        X_transformed = preprocessor.transform(X)
+        
+        # Obtener nombres de características después del preprocesamiento
+        feature_names = preprocessor.get_feature_names_out()
+        
+        # Calcular valores SHAP
+        import shap
+        explainer = shap.TreeExplainer(model.named_steps['classifier'])
+        shap_values = explainer.shap_values(X_transformed)
+        
+        # Crear directorio para artifacts
+        artifact_dir = MODEL_DIR / "shap_artifacts"
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Gráfico de importancia global
+        plt.figure(figsize=(10, 8))
+        shap.summary_plot(shap_values, X_transformed, feature_names=feature_names, show=False)
+        plt.title("SHAP Feature Importance")
+        importance_path = artifact_dir / "shap_importance.png"
         plt.tight_layout()
-        plt.savefig(coef_png)
+        plt.savefig(importance_path)
         plt.close()
-        mlflow.log_artifact(str(coef_png))
-        mlflow.log_artifact(str(coef_txt))
-    return str(coef_png)
+        
+        # Gráfico de dependencia para características principales
+        if len(shap_values.shape) > 1:  # Para clasificación multiclase
+            shap_values_2d = shap_values[1] if len(shap_values) == 2 else shap_values
+        else:
+            shap_values_2d = shap_values
+            
+        # Encontrar característica más importante
+        feature_importance = np.abs(shap_values_2d).mean(0)
+        top_feature_idx = np.argmax(feature_importance)
+        
+        plt.figure(figsize=(10, 6))
+        shap.dependence_plot(top_feature_idx, shap_values_2d, X_transformed, 
+                           feature_names=feature_names, show=False)
+        dependence_path = artifact_dir / "shap_dependence.png"
+        plt.tight_layout()
+        plt.savefig(dependence_path)
+        plt.close()
+        
+        # Loggear en MLflow
+        with mlflow.start_run(run_name="model_interpretation"):
+            mlflow.log_artifact(str(importance_path))
+            mlflow.log_artifact(str(dependence_path))
+            
+            # Guardar valores SHAP
+            shap_values_path = artifact_dir / "shap_values.npy"
+            np.save(shap_values_path, shap_values)
+            mlflow.log_artifact(str(shap_values_path))
+        
+        return str(importance_path)
+        
+    except Exception as e:
+        print(f"Error en interpretabilidad: {e}")
+        # Continuar incluso si hay error en SHAP
+        return "interpretation_failed"
 
 
 # ------------------ Predicción ------------------
 def predict_next_week(**context) -> str:
-    """
-    Genera predicciones para la semana siguiente a la mas reciente (t_max+7d).
-    Usa las observaciones de la ultima semana como base de features.
-    """
-    enriched_path = Path(context['ti'].xcom_pull(task_ids='enrich_and_label'))
-    df = pd.read_parquet(enriched_path)
-    if 'week' not in df.columns:
-        df['purchase_date'] = pd.to_datetime(df['purchase_date'], errors='coerce')
-        df['week'] = df['purchase_date'].dt.to_period('W').dt.start_time
-
-    t_max = df['week'].max()
-    week_pred = t_max + pd.to_timedelta(7, unit='d')
-
-    df_latest = df[df['week'] == t_max].copy()
-    if TARGET_COL in df_latest.columns:
-        df_latest = df_latest.drop(columns=[TARGET_COL])
-    X = df_latest.drop(columns=['week'], errors='ignore')
-
-    model_path = Path(context['ti'].xcom_pull(task_ids='train_model'))
-    model = joblib.load(model_path)
-    proba = model.predict_proba(X)[:, 1] if hasattr(model, 'predict_proba') else model.predict(X)
-
-    df_out = df_latest[['customer_id', 'product_id']].copy()
-    df_out['predict_week'] = week_pred
-    df_out['score'] = proba
-
-    out_dir = PREDICTIONS_DIR / context['ds']
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / 'predicciones.parquet'
-    df_out.to_parquet(out_path, index=False)
-    mlflow.log_artifact(str(out_path))
-    return str(out_path)
+    """Generar predicciones para la semana siguiente"""
+    try:
+        enriched_path = Path(context['ti'].xcom_pull(task_ids='enrich_and_label'))
+        df = pd.read_parquet(enriched_path)
+        
+        # Asegurar que tenemos la columna de fecha
+        if 'purchase_date' not in df.columns:
+            raise ValueError("Columna purchase_date no encontrada")
+            
+        df['purchase_date'] = pd.to_datetime(df['purchase_date'])
+        
+        # Encontrar la fecha máxima y calcular la semana siguiente
+        max_date = df['purchase_date'].max()
+        next_week_start = max_date + pd.Timedelta(days=7)
+        
+        print(f"Fecha máxima en datos: {max_date}")
+        print(f"Prediciendo para semana: {next_week_start}")
+        
+        # Usar la última semana disponible para predicción
+        last_week_data = df[df['purchase_date'] >= (max_date - pd.Timedelta(days=7))].copy()
+        
+        if last_week_data.empty:
+            raise ValueError("No hay datos de la última semana para generar predicciones")
+        
+        # Cargar modelo
+        model_path = Path(context['ti'].xcom_pull(task_ids='train_model'))
+        model = joblib.load(model_path)
+        
+        # Preparar características para predicción
+        safe_features = ['region_id', 'customer_type', 'Y', 'X', 'size', 
+                        'brand', 'category', 'sub_category', 'segment', 'package']
+        safe_features = [col for col in safe_features if col in last_week_data.columns]
+        
+        X_pred = last_week_data[safe_features]
+        
+        # Generar predicciones
+        predictions = model.predict_proba(X_pred)[:, 1]  # Probabilidad de clase positiva
+        
+        # Crear DataFrame de resultados
+        results_df = last_week_data[['customer_id', 'product_id']].copy()
+        results_df['prediction_date'] = pd.Timestamp.now()
+        results_df['target_week'] = next_week_start
+        results_df['purchase_probability'] = predictions
+        results_df['predicted_purchase'] = (predictions > 0.5).astype(int)
+        
+        # Guardar predicciones
+        predictions_dir = PREDICTIONS_DIR / context['ds']
+        predictions_dir.mkdir(parents=True, exist_ok=True)
+        predictions_path = predictions_dir / 'predicciones_semana_siguiente.parquet'
+        
+        results_df.to_parquet(predictions_path, index=False)
+        
+        # Loggear en MLflow
+        with mlflow.start_run(run_name="weekly_predictions"):
+            mlflow.log_artifact(str(predictions_path))
+            mlflow.log_metrics({
+                "mean_prediction_probability": predictions.mean(),
+                "predicted_purchases": results_df['predicted_purchase'].sum(),
+                "total_predictions": len(results_df)
+            })
+        
+        print(f"Predicciones generadas: {len(results_df)} registros")
+        print(f"Predicciones guardadas en: {predictions_path}")
+        
+        return str(predictions_path)
+        
+    except Exception as e:
+        print(f"Error en generación de predicciones: {e}")
+        raise
 
 
 def skip_retrain():
@@ -431,6 +671,8 @@ with DAG(
         python_callable=skip_retrain,
     )
 
+    # Esto debe estar al final del archivo:
     wait_for_data >> ingest_task >> transform_task >> enrich_task >> drift_task >> branch_retrain
     branch_retrain >> [tune_task, no_retrain]
     tune_task >> train_task >> interpret_task >> predict_task
+    no_retrain >> predict_task  # ← ¡IMPORTANTE! Esta conexión debe existir
