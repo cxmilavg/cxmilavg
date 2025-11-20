@@ -25,6 +25,7 @@ from airflow import DAG
 from airflow.models import Variable
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.sensors.python import PythonSensor
+from airflow.utils.trigger_rule import TriggerRule
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
@@ -228,7 +229,6 @@ def detect_drift(**context) -> dict:
         processed_path = Path(context["ti"].xcom_pull(task_ids="transform_data"))
         df_new = pd.read_parquet(processed_path)
 
-        # Si no existe referencia, crear una
         if not REFERENCE_PATH.exists():
             REFERENCE_PATH.parent.mkdir(parents=True, exist_ok=True)
             df_new.to_parquet(REFERENCE_PATH, index=False)
@@ -669,6 +669,7 @@ with DAG(
     predict_task = PythonOperator(
         task_id="predict_next_week",
         python_callable=predict_next_week,
+        trigger_rule=TriggerRule.NONE_FAILED_MIN_ONE_SUCCESS,
     )
 
     no_retrain = PythonOperator(
@@ -676,8 +677,7 @@ with DAG(
         python_callable=skip_retrain,
     )
 
-    # Esto debe estar al final del archivo:
     wait_for_data >> ingest_task >> transform_task >> enrich_task >> drift_task >> branch_retrain
     branch_retrain >> [tune_task, no_retrain]
     tune_task >> train_task >> interpret_task >> predict_task
-    no_retrain >> predict_task  # ← ¡IMPORTANTE! Esta conexión debe existir
+    no_retrain >> predict_task  

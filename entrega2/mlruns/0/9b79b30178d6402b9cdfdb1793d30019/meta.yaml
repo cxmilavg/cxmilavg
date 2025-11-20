@@ -1,0 +1,15 @@
+artifact_uri: /Users/cxmilavg/Documents/GitHub/cxmilavg/entrega2/mlruns/0/9b79b30178d6402b9cdfdb1793d30019/artifacts
+end_time: 1763602315008
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: 9b79b30178d6402b9cdfdb1793d30019
+run_name: weekly_predictions
+run_uuid: 9b79b30178d6402b9cdfdb1793d30019
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1763602315002
+status: 3
+tags: []
+user_id: cxmilavg
