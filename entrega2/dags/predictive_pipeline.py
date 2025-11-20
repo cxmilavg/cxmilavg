@@ -170,7 +170,14 @@ def enrich_and_label(**context) -> str:
 
 
 # ------------------ Preprocesador reutilizable ------------------
-def build_preprocessor() -> ColumnTransformer:
+def build_preprocessor(feature_columns: Optional[set[str]] = None) -> ColumnTransformer:
+    available = set(feature_columns or [])
+    num_active = [c for c in NUM_COLS if (not available or c in available)]
+    cat_active = [c for c in CAT_COLS if (not available or c in available)]
+
+    if not num_active and not cat_active:
+        raise ValueError("No hay columnas válidas para el preprocesador; revisa el dataset de entrada")
+
     num_proc = Pipeline(
         steps=[
             ("imputer", SimpleImputer(strategy="median")),
@@ -183,12 +190,13 @@ def build_preprocessor() -> ColumnTransformer:
             ("encoder", OneHotEncoder(handle_unknown="ignore")),
         ]
     )
-    return ColumnTransformer(
-        transformers=[
-            ("num", num_proc, NUM_COLS),
-            ("cat", cat_proc, CAT_COLS),
-        ]
-    )
+    transformers = []
+    if num_active:
+        transformers.append(("num", num_proc, num_active))
+    if cat_active:
+        transformers.append(("cat", cat_proc, cat_active))
+
+    return ColumnTransformer(transformers=transformers)
 
 
 # ------------------ Drift detection (PSI) ------------------
@@ -311,43 +319,40 @@ def tune_model(**context) -> dict:
             X, y, test_size=0.2, random_state=42, stratify=y
         )
 
-        preprocessor = build_preprocessor()
+        preprocessor = build_preprocessor(set(X_train.columns))
 
         def objective(trial):
             """Función objetivo para Optuna"""
             params = {
-                'n_estimators': trial.suggest_int('n_estimators', 50, 200),
-                'max_depth': trial.suggest_int('max_depth', 3, 10),
-                'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.3, log=True),
-                'num_leaves': trial.suggest_int('num_leaves', 20, 100),
-                'min_child_samples': trial.suggest_int('min_child_samples', 10, 50),
-                'subsample': trial.suggest_float('subsample', 0.7, 1.0),
-                'colsample_bytree': trial.suggest_float('colsample_bytree', 0.7, 1.0),
-                'reg_alpha': trial.suggest_float('reg_alpha', 0.0, 1.0),
-                'reg_lambda': trial.suggest_float('reg_lambda', 0.0, 1.0),
+                "n_estimators": trial.suggest_int("n_estimators", 50, 200),
+                "max_depth": trial.suggest_int("max_depth", 3, 10),
+                "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.3, log=True),
+                "num_leaves": trial.suggest_int("num_leaves", 20, 100),
+                "min_child_samples": trial.suggest_int("min_child_samples", 10, 50),
+                "subsample": trial.suggest_float("subsample", 0.7, 1.0),
+                "colsample_bytree": trial.suggest_float("colsample_bytree", 0.7, 1.0),
+                "reg_alpha": trial.suggest_float("reg_alpha", 0.0, 1.0),
+                "reg_lambda": trial.suggest_float("reg_lambda", 0.0, 1.0),
             }
 
-            model = Pipeline([
-                ('preprocessor', preprocessor),
-                ('classifier', LGBMClassifier(**params, random_state=42, n_jobs=-1))
-            ])
+            model = Pipeline(
+                [
+                    ("preprocessor", preprocessor),
+                    ("classifier", LGBMClassifier(**params, random_state=42, n_jobs=-1)),
+                ]
+            )
 
-            # Usar cross-validation para evaluación más robusta
             from sklearn.model_selection import cross_val_score
-            scores = cross_val_score(model, X_train, y_train, 
-                                   cv=3, scoring='roc_auc', n_jobs=-1)
+
+            scores = cross_val_score(model, X_train, y_train, cv=3, scoring="roc_auc", n_jobs=-1)
             return scores.mean()
 
-        study = optuna.create_study(
-            direction='maximize',
-            sampler=TPESampler(seed=42)
-        )
-        
+        study = optuna.create_study(direction="maximize", sampler=TPESampler(seed=42))
         study.optimize(objective, n_trials=10, timeout=600)
-        
+
         best_params = study.best_params
         context["ti"].xcom_push(key="best_params", value=best_params)
-        
+
         # Loggear en MLflow
         with mlflow.start_run(run_name="hyperparameter_tuning"):
             mlflow.log_params(best_params)
@@ -392,7 +397,7 @@ def train_model(**context) -> str:
             X, y, test_size=0.2, random_state=42, stratify=y
         )
 
-        preprocessor = build_preprocessor()
+        preprocessor = build_preprocessor(set(X_train.columns))
         
         # Usar LightGBM como modelo principal
         model = Pipeline([
